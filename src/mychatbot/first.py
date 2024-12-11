@@ -1,8 +1,8 @@
 # Import libraries
 import os
 from PyPDF2 import PdfReader
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
 from ollama import Client
 
 
