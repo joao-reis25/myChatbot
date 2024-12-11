@@ -250,6 +250,8 @@ langchain-core==0.3.24
     # via langchain-text-splitters
 langchain-text-splitters==0.3.2
     # via langchain
+langdetect==1.0.9
+    # via mychatbot
 langsmith==0.2.2
     # via langchain
     # via langchain-community
@@ -525,6 +527,7 @@ shellingham==1.5.4
     # via typer
 six==1.17.0
     # via kubernetes
+    # via langdetect
     # via posthog
     # via python-dateutil
     # via rfc3339-validator
