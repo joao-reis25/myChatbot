@@ -44,17 +44,13 @@ language = st.radio(
     horizontal=True
 )
 
-# Add clear chat button
-if st.button("Clear Chat History"):
-    st.session_state.chat_history = []
-    st.empty()
-
 # Display chat history
 for message in st.session_state.chat_history:
     if message["role"] == "user":
         st.write("**You**:\n" + message["content"] + "\n")
     else:
         st.write("**Bot**:\n" + message["content"] + "\n")
+        st.write("--------------------------------")
 
 if user_question:
     # Add user message to history
@@ -91,8 +87,9 @@ if user_question:
                 st.session_state.chat_history.append({"role": "assistant", "content": final_response})
                 
                 # Display the latest response
-                st.write(f"**You**:\n {user_question}")
-                st.write(f"**Bot**:\n {final_response}")
+                st.markdown(f"**You**:<br> {user_question}", unsafe_allow_html=True)
+                st.markdown(f"**Bot**:<br> {final_response}", unsafe_allow_html=True)
+                st.write("--------------------------------")
             else:
                 error_msg = "I couldn't find any relevant information to answer your question."
                 st.session_state.chat_history.append({"role": "assistant", "content": error_msg})
