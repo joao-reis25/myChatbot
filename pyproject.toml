@@ -6,8 +6,6 @@ authors = [
     { name = "joao-reis25", email = "joao.miguel.reis@outlook.com" }
 ]
 dependencies = [
-    "flask>=3.1.0",
-    "flask-cors>=5.0.0",
     "requests>=2.32.3",
     "chromadb>=0.5.23",
     "ollama>=0.4.4",
