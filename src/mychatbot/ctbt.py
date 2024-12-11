@@ -3,6 +3,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 from ollama import Client
 import streamlit as st
+import time
 
 # Streamlit app
 # Configure page layout - add this at the very top
@@ -14,6 +15,11 @@ st.set_page_config(
 )
 
 st.title("Your Chatbot Friend")
+
+# Initialize session state for chat history
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+
 
 # Initialize the embedding model
 embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
@@ -38,34 +44,60 @@ language = st.radio(
     horizontal=True
 )
 
+# Add clear chat button
+if st.button("Clear Chat History"):
+    st.session_state.chat_history = []
+    st.empty()
+
+# Display chat history
+for message in st.session_state.chat_history:
+    if message["role"] == "user":
+        st.write("**You**:\n" + message["content"] + "\n")
+    else:
+        st.write("**Bot**:\n" + message["content"] + "\n")
 
 if user_question:
-    # Query ChromaDB using the proper LangChain API
-    results = vectorstore.similarity_search(query=user_question, k=3)  # k=3 means top 3 results
+    # Add user message to history
+    st.session_state.chat_history.append({"role": "user", "content": user_question})
+    
+    # Show loading spinner
+    with st.spinner('Thinking...'):
+        try:
+            # Query ChromaDB using the proper LangChain API
+            results = vectorstore.similarity_search(query=user_question, k=3)
 
-    # Process and generate a response using Ollama
-    if results:
-        prompt = f"You are an assistant. Use the following documents to answer the question:\n"
-        for result in results:
-            prompt += f"{result.page_content}\n"
-        prompt += f"\nAnswer the following question: {user_question}"
+            if results:
+                prompt = f"You are an assistant. Use the following documents to answer the question:\n"
+                for result in results:
+                    prompt += f"{result.page_content}\n"
+                prompt += f"\nAnswer the following question: {user_question}"
 
-        # Get the response from the Ollama model
-        response = ollama_client.generate(model="llama3.1", prompt=prompt)
-        
-        # Check the language of the prompt first
-        prompt_language = ollama_client.generate(model="llama3.1", prompt=f"Detect the language of the following text: {user_question}")
-        if prompt_language != language:
-            translated_response = ollama_client.generate(model="llama3.1", prompt=f"Translate the following text to {language} and present only the answer: {response['response']}. Do not mention the translation in your response.")
-            if 'response' in translated_response:
-                st.write(f"{translated_response['response']}")
+                # Get the response from the Ollama model
+                response = ollama_client.generate(model="llama3.1", prompt=prompt)
+                
+                # Check the language of the prompt first
+                prompt_language = ollama_client.generate(model="llama3.1", prompt=f"Detect the language of the following text: {user_question}")
+                if prompt_language != language:
+                    translated_response = ollama_client.generate(model="llama3.1", 
+                        prompt=f"Translate the following text to {language} and present only the answer: {response['response']}")
+                    if 'response' in translated_response:
+                        final_response = translated_response['response']
+                    else:
+                        final_response = "Translation failed. Please try again."
+                else:
+                    final_response = response['response']
+                
+                # Add bot response to history
+                st.session_state.chat_history.append({"role": "assistant", "content": final_response})
+                
+                # Display the latest response
+                st.write(f"**You**:\n {user_question}")
+                st.write(f"**Bot**:\n {final_response}")
             else:
-                st.write("Translation failed. No 'response' key found in the translation response.")
-        else:
-            st.write(f"**Answer:** {response['response']}")
-        # if 'response' in response:
-        #     st.write(f"**Answer:** {response['response']}")
-        # else:
-        #     st.write("No 'response' key found in the response.")
-    else:
-        st.write("No relevant information found.")
+                error_msg = "I couldn't find any relevant information to answer your question."
+                st.session_state.chat_history.append({"role": "assistant", "content": error_msg})
+                st.error(error_msg)
+                
+        except Exception as e:
+            error_msg = f"An error occurred: {str(e)}"
+            st.error(error_msg)
