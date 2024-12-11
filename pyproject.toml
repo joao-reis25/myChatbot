@@ -10,6 +10,7 @@ dependencies = [
     "flask>=3.1.0",
     "flask-cors>=5.0.0",
     "requests>=2.32.3",
+    "chromadb>=0.5.23",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"

@@ -54,22 +54,22 @@ class OllamaChat:
         self.history = []
 
 
-from mychatbot import OllamaChat
+# from mychatbot.chatbot import OllamaChat
 
-# Create a chatbot instance
-chatbot = OllamaChat(model="llama2")
+# # Create a chatbot instance
+# chatbot = OllamaChat(model="llama2")
 
-# Send a message and get a response
-response = chatbot.chat("Hello! How are you?")
-print(response)
+# # Send a message and get a response
+# response = chatbot.chat("Hello! How are you?")
+# print(response)
 
-# Use a system prompt
-response = chatbot.chat(
-    "Tell me about Python programming.",
-    system_prompt="You are a helpful programming assistant."
-)
-print(response)
+# # Use a system prompt
+# response = chatbot.chat(
+#     "Tell me about Python programming.",
+#     system_prompt="You are a helpful programming assistant."
+# )
+# print(response)
 
-# Clear conversation history
-chatbot.clear_history()
+# # Clear conversation history
+# chatbot.clear_history()
 
