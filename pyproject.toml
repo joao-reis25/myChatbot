@@ -9,6 +9,11 @@ dependencies = [
     "requests>=2.32.3",
     "chromadb>=0.5.23",
     "ollama>=0.4.4",
+    "sentence-transformers>=3.3.1",
+    "streamlit>=1.41.0",
+    "pypdf2>=3.0.1",
+    "langchain>=0.3.11",
+    "jupyter>=1.1.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
