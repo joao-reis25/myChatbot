@@ -136,19 +136,20 @@ if "user_input" in st.session_state and st.session_state["user_input"]:
 
 # Now create the UI elements
 with main_container:
-    # First row: Chat history container with scrolling
-    chat_container = st.container()
-    with chat_container:
-        st.markdown('<div style="height: 50px; overflow-y: auto; margin-bottom: 20px;">', unsafe_allow_html=True)
-        messages = st.session_state.chat_history[-st.session_state.max_history:]
-        for message in messages:
-            with st.chat_message(message["role"]):
-                st.write(message["content"])
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Create a two-part layout
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
     
-    # Second row: Input box
-    input_container = st.container()
-    with input_container:
-        st.markdown('<div style="position: sticky; bottom: 0; background-color: white; padding: 1px 0;">', unsafe_allow_html=True)
-        user_question = st.text_input("Enter your question:", key="user_input")
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Chat history area
+    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+    messages = st.session_state.chat_history[-st.session_state.max_history:]
+    for message in messages:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Input area
+    st.markdown('<div class="input-area" style="height: 1pt; background-color: white;"></div>', unsafe_allow_html=True)
+    user_question = st.text_input("Enter your question:", key="user_input")
+    #st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
