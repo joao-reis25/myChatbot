@@ -27,7 +27,7 @@ if 'max_history' not in st.session_state:
 
 # Add temperature control in sidebar
 st.sidebar.title("Chat Settings")
-temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 0.7, 0.1)
+#temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 0.7, 0.1)
 st.sidebar.button("Clear Chat History", on_click=lambda: st.session_state.clear())
 
 # Modify the language selection to include both input and output languages
@@ -79,7 +79,7 @@ if "user_input" in st.session_state and st.session_state["user_input"]:
                     translated_question = ollama_client.generate(
                         model="llama3.1",
                         prompt=translation_prompt,
-                        options={"temperature": 0.3}
+                        options={"temperature": 0.0}
                     )
                     english_question = translated_question['response'].strip()
             else:
@@ -99,7 +99,7 @@ if "user_input" in st.session_state and st.session_state["user_input"]:
                     response = ollama_client.generate(
                         model="llama3.1",
                         prompt=prompt,
-                        options={"temperature": temperature}
+                        options={"temperature": 0.3}
                     )
                     english_response = response['response']
 
