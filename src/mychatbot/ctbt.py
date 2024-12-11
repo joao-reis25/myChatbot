@@ -57,81 +57,98 @@ vectorstore = Chroma(
 # Initialize Ollama client
 ollama_client = Client()
 
-# Move the chat display before the input
-chat_container = st.container()
-with chat_container:
-    # Display messages in reverse order (newest first)
-    messages = st.session_state.chat_history[-st.session_state.max_history:]
-    for message in (messages):
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
+# Create a main container with two rows
+main_container = st.container()
 
-# Move the user input after the chat display
-user_question = st.text_input("Enter your question:")
-
-if user_question:
+# Handle any existing question before creating new widgets
+if "user_input" in st.session_state and st.session_state["user_input"]:
     try:
-        # Add to history after displaying
-        st.session_state.chat_history.append({"role": "user", "content": user_question})
+        current_question = st.session_state["user_input"]
+        st.session_state["user_input"] = ""  # Clear input
         
-        # Detect input language if auto-detect is selected
-        detected_language = detect(user_question) if input_language == 'Auto-detect' else input_language
-        
-        # Translate user question to English if it's not in English
-        if detected_language != 'en' and detected_language != 'English':
-            with st.spinner('Translating your question...'):
-                translation_prompt = f"Translate the following text to English, maintaining the same meaning: {user_question}. Provide only the translation without any additional text."
-                translated_question = ollama_client.generate(
-                    model="llama3.1",
-                    prompt=translation_prompt,
-                    options={"temperature": 0.3}
-                )
-                english_question = translated_question['response'].strip()
-        else:
-            english_question = user_question
-
-        with st.spinner('Processing your request...'):
-            system_prompt = """You are a helpful AI assistant. Provide accurate, helpful, and concise answers.
-            If you're unsure about something, admit it. Base your answers on the provided context."""
+        # Move all processing inside a with st.empty(): block to prevent display
+        with st.empty():
+            detected_language = detect(current_question) if input_language == 'Auto-detect' else input_language
             
-            results = vectorstore.similarity_search(query=english_question, k=3)
+            st.session_state.chat_history.append({"role": "user", "content": current_question})
+            
+            # Translate user question to English if it's not in English
+            if detected_language != 'en' and detected_language != 'English':
+                with st.spinner('Translating your question...'):
+                    translation_prompt = f"Translate the following text to English, maintaining the same meaning: {current_question}. Provide only the translation without any additional text."
+                    translated_question = ollama_client.generate(
+                        model="llama3.1",
+                        prompt=translation_prompt,
+                        options={"temperature": 0.3}
+                    )
+                    english_question = translated_question['response'].strip()
+            else:
+                english_question = current_question
 
-            if results:
-                context = "\n".join([result.page_content for result in results])
-                prompt = f"{system_prompt}\n\nContext:\n{context}\n\nQuestion: {english_question}"
+            with st.spinner('Processing your request...'):
+                system_prompt = """You are a helpful AI assistant. Provide accurate, helpful, and concise answers.
+                If you're unsure about something, admit it. Base your answers only on the provided context."""
+                
+                results = vectorstore.similarity_search(query=english_question, k=3)
 
-                # Get response in English first
-                response = ollama_client.generate(
-                    model="llama3.1",
-                    prompt=prompt,
-                    options={"temperature": temperature}
-                )
-                english_response = response['response']
+                if results:
+                    context = "\n".join([result.page_content for result in results])
+                    prompt = f"{system_prompt}\n\nContext:\n{context}\n\nQuestion: {english_question}"
 
-                # Translate to desired language if not English
-                if output_language != 'English':
-                    with st.spinner(f'Translating to {output_language}...'):
-                        translation_prompt = f"Translate the following text to {output_language}, maintaining the same tone and meaning: {english_response}. Provide only the translation without any additional text."
-                        translated_response = ollama_client.generate(
-                            model="llama3.1",
-                            prompt=translation_prompt,
-                            options={"temperature": 0.3}
-                        )
-                        final_response = translated_response['response']
-                else:
-                    final_response = english_response
+                    # Get response in English first
+                    response = ollama_client.generate(
+                        model="llama3.1",
+                        prompt=prompt,
+                        options={"temperature": temperature}
+                    )
+                    english_response = response['response']
 
-                # Display only the desired language answer
-                with st.chat_message("assistant"):
-                    st.write(final_response)
+                    # Translate to desired language if not English
+                    if output_language != 'English':
+                        with st.spinner(f'Translating to {output_language}...'):
+                            translation_prompt = f"Translate the following text to {output_language}, maintaining the same tone and meaning: {english_response}. Provide only the translation without any additional text."
+                            translated_response = ollama_client.generate(
+                                model="llama3.1",
+                                prompt=translation_prompt,
+                                options={"temperature": 0.3}
+                            )
+                            final_response = translated_response['response']
+                    else:
+                        final_response = english_response
 
-                # Add response to history
-                st.session_state.chat_history.append({
-                    "role": "assistant",
-                    "content": final_response
-                })
+                    # Display only the desired language answer
+                    with st.chat_message("assistant"):
+                        st.write(final_response)
+
+                    # After getting the final_response, store it
+                    st.session_state.chat_history.append({
+                        "role": "assistant",
+                        "content": final_response
+                    })
+        
+        st.rerun()
 
     except Exception as e:
-        error_msg = f"An error occurred: {str(e)}. Please try again in a moment."
-        st.error(error_msg)
-        st.session_state.chat_history.append({"role": "assistant", "content": error_msg})
+        with st.empty():
+            error_msg = f"An error occurred: {str(e)}. Please try again in a moment."
+            st.session_state.chat_history.append({"role": "assistant", "content": error_msg})
+            st.rerun()
+
+# Now create the UI elements
+with main_container:
+    # First row: Chat history container with scrolling
+    chat_container = st.container()
+    with chat_container:
+        st.markdown('<div style="height: 50px; overflow-y: auto; margin-bottom: 20px;">', unsafe_allow_html=True)
+        messages = st.session_state.chat_history[-st.session_state.max_history:]
+        for message in messages:
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Second row: Input box
+    input_container = st.container()
+    with input_container:
+        st.markdown('<div style="position: sticky; bottom: 0; background-color: white; padding: 1px 0;">', unsafe_allow_html=True)
+        user_question = st.text_input("Enter your question:", key="user_input")
+        st.markdown('</div>', unsafe_allow_html=True)
