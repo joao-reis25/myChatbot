@@ -52,6 +52,7 @@ regex==2024.11.6
     # via transformers
 requests==2.32.3
     # via huggingface-hub
+    # via mychatbot
     # via transformers
 safetensors==0.4.5
     # via transformers
