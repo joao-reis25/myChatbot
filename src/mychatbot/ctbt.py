@@ -4,6 +4,8 @@ from langchain.vectorstores import Chroma
 from ollama import Client
 import streamlit as st
 import time
+import sys
+from typing import List, Dict
 
 # Streamlit app
 # Configure page layout - add this at the very top
@@ -19,7 +21,13 @@ st.title("Your Chatbot Friend")
 # Initialize session state for chat history
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
+if 'max_history' not in st.session_state:
+    st.session_state.max_history = 20  # Limit chat history
 
+# Add temperature control in sidebar
+st.sidebar.title("Chat Settings")
+temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 0.7, 0.1)
+st.sidebar.button("Clear Chat History", on_click=lambda: st.session_state.clear())
 
 # Initialize the embedding model
 embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
@@ -44,57 +52,82 @@ language = st.radio(
     horizontal=True
 )
 
-# Display chat history
-for message in st.session_state.chat_history:
-    if message["role"] == "user":
-        st.write("**You**:\n" + message["content"] + "\n")
-    else:
-        st.write("**Bot**:\n" + message["content"] + "\n")
-        st.write("--------------------------------")
+# Improve chat display with a container
+# Move chat container outside of the user_question condition
+chat_container = st.container()
+with chat_container:
+    for message in st.session_state.chat_history[-st.session_state.max_history:]:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
 
 if user_question:
     # Add user message to history
     st.session_state.chat_history.append({"role": "user", "content": user_question})
     
-    # Show loading spinner
-    with st.spinner('Thinking...'):
+    # Display user message immediately
+    with st.chat_message("user"):
+        st.write(user_question)
+    
+    with st.spinner('Processing your request...'):
         try:
-            # Query ChromaDB using the proper LangChain API
+            # Improved prompt with system context
+            system_prompt = """You are a helpful AI assistant. Provide accurate, helpful, and concise answers.
+            If you're unsure about something, admit it. Base your answers on the provided context."""
+            
             results = vectorstore.similarity_search(query=user_question, k=3)
 
             if results:
-                prompt = f"You are an assistant. Use the following documents to answer the question:\n"
-                for result in results:
-                    prompt += f"{result.page_content}\n"
-                prompt += f"\nAnswer the following question: {user_question}"
+                context = "\n".join([result.page_content for result in results])
+                prompt = f"{system_prompt}\n\nContext:\n{context}\n\nQuestion: {user_question}"
 
-                # Get the response from the Ollama model
-                response = ollama_client.generate(model="llama3.1", prompt=prompt)
-                
-                # Check the language of the prompt first
-                prompt_language = ollama_client.generate(model="llama3.1", prompt=f"Detect the language of the following text: {user_question}")
-                if prompt_language != language:
-                    translated_response = ollama_client.generate(model="llama3.1", 
-                        prompt=f"Translate the following text to {language} and present only the answer: {response['response']}")
-                    if 'response' in translated_response:
+                # Add retry logic for API calls
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        response = ollama_client.generate(
+                            model="llama3.1",
+                            prompt=prompt,
+                            options={
+                                "temperature": temperature
+                            }
+                        )
+                        break
+                    except Exception as e:
+                        if attempt == max_retries - 1:
+                            raise e
+                        time.sleep(1)  # Wait before retry
+
+                # Improved translation handling
+                if language != 'English':
+                    with st.spinner(f'Translating to {language}...'):
+                        translation_prompt = f"Translate the following text to {language}, maintaining the same tone and meaning: {response['response']}. Do not include any other text or comments."
+                        translated_response = ollama_client.generate(
+                            model="llama3.1",
+                            prompt=translation_prompt,
+                            options={
+                                "temperature": 0.3  # Lower temperature for translations
+                            }
+                        )
                         final_response = translated_response['response']
-                    else:
-                        final_response = "Translation failed. Please try again."
                 else:
                     final_response = response['response']
-                
-                # Add bot response to history
-                st.session_state.chat_history.append({"role": "assistant", "content": final_response})
-                
-                # Display the latest response
-                st.markdown(f"**You**:<br> {user_question}", unsafe_allow_html=True)
-                st.markdown(f"**Bot**:<br> {final_response}", unsafe_allow_html=True)
-                st.write("--------------------------------")
+
+                # Add response to history
+                st.session_state.chat_history.append({
+                    "role": "assistant",
+                    "content": final_response
+                })
+
+                # Display latest response in chat container
+                with st.chat_message("assistant"):
+                    st.write(final_response)
+
             else:
-                error_msg = "I couldn't find any relevant information to answer your question."
+                error_msg = "I couldn't find relevant information to answer your question. Could you please rephrase or ask something else?"
                 st.session_state.chat_history.append({"role": "assistant", "content": error_msg})
                 st.error(error_msg)
-                
+
         except Exception as e:
-            error_msg = f"An error occurred: {str(e)}"
+            error_msg = f"An error occurred: {str(e)}. Please try again in a moment."
             st.error(error_msg)
+            st.session_state.chat_history.append({"role": "assistant", "content": error_msg})
