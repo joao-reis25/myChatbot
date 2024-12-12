@@ -59,10 +59,10 @@ ollama_client = Client()
 #    return response['text']
 
 # Example user question
-user_question = "How is the thesis supervision done?"
+user_question = ""
 
 # Query ChromaDB using the proper LangChain API
-results = vectorstore.similarity_search(query=user_question, k=3)  # k=3 means top 3 results
+results = vectorstore.similarity_search(query=user_question, k=20)  # k=3 means top 3 results
 # Query ChromaDB for relevant documents
 # Example user question
 

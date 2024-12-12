@@ -87,9 +87,9 @@ if "user_input" in st.session_state and st.session_state["user_input"]:
                 english_question = current_question
 
             with st.spinner('Processing your request...'):
-                system_prompt = """You are a helpful AI assistant. Your primary task is to answer questions based on the provided PDF documents.
+                system_prompt = """You are a helpful AI assistant specialized in law. Your primary task is to answer questions based on the provided PDF documents.
                 If the question cannot be answered using the provided context, clearly state that the information is not found in the documents.
-                Always reference the specific parts of the documents that support your answer."""
+                Always reference the specific parts of the documents that support your answer. Include file transcript in your answer when possible"""
                 
                 results = vectorstore.similarity_search(query=english_question, k=3)
 
