@@ -19,6 +19,7 @@ A sophisticated chatbot system that leverages vector database technology to inte
 
 ## Technical Stack
 
+- Frontend Framework: Streamlit
 - Vector Database: Chroma   
 - Embedding Model: HuggingFaceEmbeddings
 - PDF Processing: Langchain
@@ -27,10 +28,13 @@ A sophisticated chatbot system that leverages vector database technology to inte
 ## Getting Started
 
 1. Clone the repository
-2. Install the dependencies
-3. Run the application
+2. Install the dependencies:   ```bash
+   pip install -r requirements.txt   ```
+3. Make sure you have Ollama running locally
 
 ## Usage
 
-1. Run the application
-2. Ask a question
+1. Start the application:   ```bash
+   streamlit run app.py   ```
+2. Upload your PDF documents through the web interface
+3. Ask questions about your documents in the chat interface
