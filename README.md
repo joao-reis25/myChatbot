@@ -19,10 +19,10 @@ A sophisticated chatbot system that leverages vector database technology to inte
 
 ## Technical Stack
 
-- Vector Database: [Your chosen vector DB]
-- Embedding Model: [Your chosen embedding model]
-- PDF Processing: [Your PDF processing library]
-- Backend Framework: [Your backend framework]
+- Vector Database: Chroma   
+- Embedding Model: HuggingFaceEmbeddings
+- PDF Processing: Langchain
+- Backend Framework: Ollama
 
 ## Getting Started
 
