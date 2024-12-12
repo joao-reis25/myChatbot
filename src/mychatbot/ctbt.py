@@ -12,13 +12,13 @@ import subprocess
 # Streamlit app
 # Configure page layout - add this at the very top
 st.set_page_config(
-    page_title="Your Chatbot Friend",
+    page_title="Your Law Chatbot",
     page_icon="🤖",
     layout="wide",  # or "centered"
     initial_sidebar_state="expanded"  # or "collapsed"
 )
 
-st.title("Your Chatbot Friend")
+st.title("Your Law Chatbot")
 
 # Initialize session state for chat history
 if 'chat_history' not in st.session_state:
