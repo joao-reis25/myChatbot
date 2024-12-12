@@ -87,20 +87,33 @@ if "user_input" in st.session_state and st.session_state["user_input"]:
                 english_question = current_question
 
             with st.spinner('Processing your request...'):
-                system_prompt = """You are a helpful AI assistant. Provide accurate, helpful, and concise answers.
-                Base your answers only on the provided context and files. If information is not available, admit it."""
+                system_prompt = """You are a helpful AI assistant. Your primary task is to answer questions based on the provided PDF documents.
+                If the question cannot be answered using the provided context, clearly state that the information is not found in the documents.
+                Always reference the specific parts of the documents that support your answer."""
                 
                 results = vectorstore.similarity_search(query=english_question, k=3)
 
                 if results:
-                    context = "\n".join([result.page_content for result in results])
-                    prompt = f"{system_prompt}\n\nContext:\n{context}\n\nQuestion: {english_question}"
+                    # Format context with clear separation between different document sections
+                    context_parts = []
+                    for i, result in enumerate(results, 1):
+                        context_parts.append(f"Document section {i}:\n{result.page_content}")
+                    context = "\n\n".join(context_parts)
+                    
+                    prompt = f"""{system_prompt}
+
+Context from PDF documents:
+{context}
+
+Question: {english_question}
+
+Please answer based on the above context from the PDF documents. If the information isn't found in the context, please say so clearly."""
 
                     # Get response in English first
                     response = ollama_client.generate(
                         model="llama3.1",
                         prompt=prompt,
-                        options={"temperature": 0.3}
+                        options={"temperature": 0.1}  # Lower temperature for more focused answers
                     )
                     english_response = response['response']
 
