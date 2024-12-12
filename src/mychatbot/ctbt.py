@@ -7,6 +7,7 @@ import time
 import sys
 from typing import List, Dict
 from langdetect import detect
+import subprocess
 
 # Streamlit app
 # Configure page layout - add this at the very top
@@ -87,7 +88,7 @@ if "user_input" in st.session_state and st.session_state["user_input"]:
 
             with st.spinner('Processing your request...'):
                 system_prompt = """You are a helpful AI assistant. Provide accurate, helpful, and concise answers.
-                If you're unsure about something, admit it. Base your answers only on the provided context."""
+                Base your answers only on the provided context and files. If information is not available, admit it."""
                 
                 results = vectorstore.similarity_search(query=english_question, k=3)
 
@@ -103,6 +104,17 @@ if "user_input" in st.session_state and st.session_state["user_input"]:
                     )
                     english_response = response['response']
 
+                    # Check if the response indicates no information
+                    if "information is not available" in english_response.lower() or "don't have" in english_response.lower():
+                        # Run the retraining script
+                        try:
+                            subprocess.run(["python", "chatbot_retrain.py"], check=True)
+                            st.warning("Retraining model with updated information. Please ask your question again.")
+                            time.sleep(2)  # Give some time for the warning to be visible
+                            st.rerun()
+                        except subprocess.CalledProcessError as e:
+                            st.error(f"Error during retraining: {str(e)}")
+                            
                     # Translate to desired language if not English
                     if output_language != 'English':
                         with st.spinner(f'Translating to {output_language}...'):

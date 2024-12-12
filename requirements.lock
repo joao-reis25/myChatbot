@@ -109,6 +109,8 @@ filelock==3.16.1
     # via transformers
 flatbuffers==24.3.25
     # via onnxruntime
+fpdf==1.7.2
+    # via mychatbot
 fqdn==1.5.1
     # via jsonschema
 frozenlist==1.5.0
