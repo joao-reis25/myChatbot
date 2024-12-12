@@ -1,5 +1,5 @@
 import os
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 from ollama import Client
 import streamlit as st

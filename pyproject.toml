@@ -18,6 +18,8 @@ dependencies = [
     "langchain-community>=0.3.11",
     "langdetect>=1.0.9",
     "fpdf>=1.7.2",
+    "pdf-processor>=0.2",
+    "langchain-huggingface>=0.1.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
